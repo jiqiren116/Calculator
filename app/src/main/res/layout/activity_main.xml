@@ -58,12 +58,15 @@
 
     <EditText
         android:id="@+id/textView2"
-        android:layout_width="453dp"
+        android:layout_width="match_parent"
         android:layout_height="172dp"
-        android:text="TextView"
+        android:background="@drawable/show_number"
+        android:editable="false"
         app:layout_constraintBottom_toTopOf="@+id/guideline"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        tools:layout_editor_absoluteX="0dp" />
+        android:textSize="30sp"
+        tools:ignore="MissingConstraints" />
 
     <Button
         android:id="@+id/button3"
