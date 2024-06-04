@@ -2,6 +2,7 @@ package com.example.calculator;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -66,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             currentInput += number;
             tv_input.setText(currentInput);
         } else if ( id == R.id.btn_add || id == R.id.btn_sub || id == R.id.btn_multiply || id == R.id.btn_div) {
-
+            Log.d("MainActivity", "onClick: ");
         }
     }
 
