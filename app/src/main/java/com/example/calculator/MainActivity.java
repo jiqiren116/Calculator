@@ -2,16 +2,13 @@ package com.example.calculator;
 
 import android.annotation.SuppressLint;
 import android.graphics.Color;
-import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.PopupWindow;
 import android.widget.TextView;
@@ -68,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_equal).setOnClickListener(this);
         findViewById(R.id.btn_clear).setOnClickListener(this);
         findViewById(R.id.btn_delete).setOnClickListener(this);
-        findViewById(R.id.btn_square).setOnClickListener(this);
+        findViewById(R.id.btn_point).setOnClickListener(this);
 
         tv_result = findViewById(R.id.tv_result);
         tv_input = findViewById(R.id.tv_input);
@@ -117,10 +114,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         int id = v.getId();
         // 处理数字按钮点击事件
-        if (id == R.id.btn_0 || id == R.id.btn_1 || id == R.id.btn_2 || id == R.id.btn_3 || id == R.id.btn_4 || id == R.id.btn_5 || id == R.id.btn_6 || id == R.id.btn_7 || id == R.id.btn_8 || id == R.id.btn_9) {
+        if (id == R.id.btn_0 || id == R.id.btn_1 || id == R.id.btn_2 || id == R.id.btn_3 || id == R.id.btn_4 || id == R.id.btn_5 || id == R.id.btn_6 || id == R.id.btn_7 || id == R.id.btn_8 || id == R.id.btn_9 || id == R.id.btn_point) {
             inputOperation(v);
         } else if (id == R.id.btn_add || id == R.id.btn_sub
-                || id == R.id.btn_multiply || id == R.id.btn_div || id == R.id.btn_square) {
+                || id == R.id.btn_multiply || id == R.id.btn_div) {
             if (operarorIsLegal(v)) {
                 inputOperation(v);
             }
@@ -134,10 +131,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             calculationHistoryList.add(new CalculationHistory(currentInput));
             historyAdapter.notifyDataSetChanged();
         } else if (id == R.id.btn_delete) {
-//            if (currentInput.length() > 0) {
-//                currentInput = currentInput.substring(0, currentInput.length() - 1);
-//                tv_input.setText(currentInput);
-//            }
             deleteOperation();
         } else if (id == R.id.btn_clear) {
             currentInput = "";
@@ -153,13 +146,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         // 删除最后一个非空格字符
         if (currentInput.length() > 0) {
-            // 如果当前输入以^2结尾，则删除两个字符
-            if (currentInput.endsWith("^2")) {
-                currentInput = currentInput.substring(0, currentInput.length() - 2);
-            } else {
-                // 删除最后一个字符
-                currentInput = currentInput.substring(0, currentInput.length() - 1);
-            }
+//             删除最后一个字符
+            currentInput = currentInput.substring(0, currentInput.length() - 1);
         }
         tv_input.setText(currentInput);
     }
@@ -177,7 +165,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         for (String token : tokens) {
-            if (token.equals("+") || token.equals("-") || token.equals("×") || token.equals("÷") || token.equals("^2")) {
+            if (token.equals("+") || token.equals("-") || token.equals("×") || token.equals("÷")) {
+
                 // 遇到操作符，将操作符入栈
                 //若栈空直接入栈
                 if (operatorStack.isEmpty()) {
@@ -219,24 +208,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Stack<String> numberStack = new Stack<>();
         String[] tokens = postfix.split(" ");
         for (String token : tokens) {
-            if (token.equals("+") || token.equals("-") || token.equals("×") || token.equals("÷") || token.equals("^2")) {
+            if (token.equals("+") || token.equals("-") || token.equals("×") || token.equals("÷")) {
+
                 // 检查栈中是否有足够的操作数，不要出现1 + =这种情况，需要两个操作数但现在只有一个
-                if (numberStack.size() < 2 && !token.equals("^2")) {
+                if (numberStack.size() < 2) {
                     Toast.makeText(this, "操作数 数量不对！", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                // 遇到操作符，从栈中弹出两个操作数，进行计算，并将结果入栈
-                String num2 = null;
-                String num1 = null;
-                //如果操作符是^2，只弹出栈顶的一个操作数即可
-                if (token.equals("^2")) {
-                    num2 = numberStack.pop();
 
-                } else {
-                    //否则弹出两个操作数
-                    num2 = numberStack.pop();
-                    num1 = numberStack.pop();
-                }
+                // 遇到操作符，从栈中弹出两个操作数，进行计算，并将结果入栈
+                String num2 = numberStack.pop();;
+                String num1 = numberStack.pop();;
 
                 String result = null;
                 switch (token) {
@@ -254,9 +236,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             Toast.makeText(this, "除数不能为0", Toast.LENGTH_SHORT).show();
                         }
                         result = String.valueOf(Double.parseDouble(num1) / Double.parseDouble(num2));
-                        break;
-                    case "^2":
-                        result = String.valueOf(Double.parseDouble(num2) * Double.parseDouble(num2));
                         break;
                     default:
                         break;
@@ -289,8 +268,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case "×":
             case "÷":
                 return 2;
-            case "^2":
-                return 3;
             default:
                 return 0;
         }
@@ -302,7 +279,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * @param v
      */
     private boolean operarorIsLegal(View v) {
-        String op = ((Button) v).getText().toString();
         // 如果当前输入的字符串为空，则不允许输入运算符
         if (currentInput.length() == 0) {
             Toast.makeText(this, "计算内容为空！", Toast.LENGTH_SHORT).show();
@@ -327,19 +303,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void inputOperation(View view) {
         String numberOrOperator = ((Button) view).getText().toString();
-        //对于x^2特殊处理，只保留^2
-        if (numberOrOperator.equals("x^2")) {
-            numberOrOperator = "^2";
-        }
+
         //每当输入运算符时，保存前后要加空格，方便后面取值
-        if (numberOrOperator.equals("+") || numberOrOperator.equals("-") || numberOrOperator.equals("×") || numberOrOperator.equals("÷") || numberOrOperator.equals("^2")) {
+        if (numberOrOperator.equals("+") || numberOrOperator.equals("-") || numberOrOperator.equals("×") || numberOrOperator.equals("÷")) {
+
             currentInput += " " + numberOrOperator + " ";
-//            currentInput += " " + numberOrOperator;
 
         } else {
             currentInput += numberOrOperator;
         }
-//            currentInput += numberOrOperator + " ";
 
         tv_input.setText(currentInput);
     }
