@@ -17,7 +17,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView tv_result; //显示结果
     private TextView tv_input;//显示输入
     private String currentInput = "";//用于存储当前输入的字符串
-    private Character currentOperator = '\0';//存储当前操作符
+//    private Character currentOperator = '\0';//存储当前操作符
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -59,13 +59,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int id = v.getId();
         // 处理数字按钮点击事件
         if (id == R.id.btn_0 || id == R.id.btn_1 || id == R.id.btn_2 || id == R.id.btn_3 || id == R.id.btn_4 || id == R.id.btn_5 || id == R.id.btn_6 || id == R.id.btn_7 || id == R.id.btn_8 || id == R.id.btn_9) {
-            String number = ((Button) v).getText().toString();
-            currentInput += number;
-            tv_input.setText(currentInput);
+            inputOperation(v);
         } else if (id == R.id.btn_add || id == R.id.btn_sub || id == R.id.btn_multiply || id == R.id.btn_div || id == R.id.btn_square) {
-            String operator = ((Button) v).getText().toString();
-            currentInput += operator;
-            tv_input.setText(currentInput);
+            if (operarorIsLegal(v)) {
+                inputOperation(v);
+            }
         } else if (id == R.id.btn_equal) {
 
         } else if (id == R.id.btn_delete) {
@@ -79,6 +77,37 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    /**
+     * 判断当前输入的运算符是否合法
+     *
+     * @param v
+     */
+    private boolean operarorIsLegal(View v) {
+        String op = ((Button) v).getText().toString();
+        // 如果当前输入的字符串为空，则不允许输入运算符
+        if (currentInput.length() == 0) {
+            Toast.makeText(this, "计算内容为空！", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        // 判断前一个是不是操作符，不可以输入连续的操作符
+        char preChar = currentInput.charAt(currentInput.length() - 1);
+        if (preChar == '+' || preChar == '-' || preChar == '*' || preChar == '÷') {
+            Toast.makeText(this, "字符不合法！", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 执行数字和操作符的输入
+     *
+     * @param view
+     */
+    private void inputOperation(View view) {
+        String numberOrOperator = ((Button) view).getText().toString();
+        currentInput += numberOrOperator;
+        tv_input.setText(currentInput);
+    }
 
     /**
      * 添加OptionMenu
