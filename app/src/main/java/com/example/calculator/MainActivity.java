@@ -1,11 +1,19 @@
 package com.example.calculator;
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
+import android.graphics.Point;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.view.Display;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,7 +30,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView tv_result; //显示结果
     private TextView tv_input;//显示输入
     private String currentInput = "";//用于存储当前输入的字符串
-//    private Character currentOperator = '\0';//存储当前操作符
 
     // 存储历史记录
     private ArrayList<CalculationHistory> calculationHistoryList = new ArrayList<>();
@@ -30,8 +37,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // 适配器
     HistoryAdapter historyAdapter;
 
-    // 存储历史记录的RecyclerView
-    RecyclerView recyclerView;
+
+    // 弹出窗口
+    private PopupWindow popupWindow;
+
+    //弹出窗口的recyclerView
+    RecyclerView popupRecyclerView;
+
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -60,12 +72,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         tv_result = findViewById(R.id.tv_result);
         tv_input = findViewById(R.id.tv_input);
-
-        // 给RecyclerView添加适配器，并设置为隐藏
-        recyclerView = findViewById(R.id.recyclerView_history);
-        recyclerView.setVisibility(View.GONE);
-        // 设置布局管理器
-        recyclerView.setLayoutManager( new LinearLayoutManager(this));
 
         calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
         calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
@@ -99,9 +105,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
 
         historyAdapter = new HistoryAdapter(calculationHistoryList);
-
-        recyclerView.setAdapter(historyAdapter);
-
     }
 
     /**
@@ -288,12 +291,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 return false;
             }
         }
-        // 因为每个操作符前后都有空格，像2 + 3 - 5，判断前两个位置是不是操作符，不可以输入连续的操作符
-//        char preChar = currentInput.charAt(currentInput.length() - 2);
-//        if (preChar == '+' || preChar == '-' || preChar == '×' || preChar == '÷') {
-//            Toast.makeText(this, "字符不合法！", Toast.LENGTH_SHORT).show();
-//            return false;
-//        }
         return true;
     }
 
@@ -341,14 +338,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int itemId = item.getItemId();
         if (itemId == R.id.item_history) {
             Toast.makeText(this, "你点击了历史记录", Toast.LENGTH_SHORT).show();
-            // 显示 RecyclerView
-            if (recyclerView.getVisibility() == View.GONE) {
-                recyclerView.setVisibility(View.VISIBLE);
-            } else {
-                recyclerView.setVisibility(View.GONE);
+            // 创建PopupWindow
+            createPopupWindow();
+            // 显示PopupWindow
+            if (!popupWindow.isShowing()) {
+                popupWindow.showAtLocation(findViewById(R.id.main), Gravity.NO_GRAVITY, 0, 0);
             }
+            return true;
         }
         return true;
+    }
+
+    /**
+     * 创建PopupWindow
+     * @return
+     */
+    private void createPopupWindow() {
+        //弹出窗口初始化
+        // 初始化PopupWindow
+        View popupView = getLayoutInflater().inflate(R.layout.popup_recycler_view, null);
+        // 例如，设置PopupWindow的宽度为屏幕宽度的80%，高度为屏幕高度的60%
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        int width = (int) (metrics.widthPixels * 0.7); // 屏幕宽度的70%
+        int height = (int) (metrics.heightPixels * 0.9); // 屏幕高度的60%
+
+        popupWindow = new PopupWindow(popupView, width, height);
+        popupWindow.setFocusable(true);
+        popupWindow.setOutsideTouchable(true);
+        //设置弹出窗口的适配器
+        popupRecyclerView = popupView.findViewById(R.id.popupRecyclerView);
+        popupRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        popupRecyclerView.setAdapter(historyAdapter);
+        //处理popupwindow消失
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+        // 设置动画资源
+        int animStyle = android.R.style.Animation_Dialog; // 系统提供的动画样式
+        popupWindow.setAnimationStyle(animStyle);
     }
 
 
