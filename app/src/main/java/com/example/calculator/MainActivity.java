@@ -134,16 +134,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             calculationHistoryList.add(new CalculationHistory(currentInput));
             historyAdapter.notifyDataSetChanged();
         } else if (id == R.id.btn_delete) {
-            if (currentInput.length() > 0) {
-                currentInput = currentInput.substring(0, currentInput.length() - 1);
-                tv_input.setText(currentInput);
-            }
+//            if (currentInput.length() > 0) {
+//                currentInput = currentInput.substring(0, currentInput.length() - 1);
+//                tv_input.setText(currentInput);
+//            }
+            deleteOperation();
         } else if (id == R.id.btn_clear) {
             currentInput = "";
             tv_input.setText(currentInput);
         }
     }
 
+    //执行点击删除按钮时的操作
+    private void deleteOperation() {
+        // 如果当前输入的最后一个字符是空格，继续删除前一个字符，直到找到非空格字符为止
+        while (currentInput.length() > 0 && currentInput.charAt(currentInput.length() - 1) == ' ') {
+            currentInput = currentInput.substring(0, currentInput.length() - 1);
+        }
+        // 删除最后一个非空格字符
+        if (currentInput.length() > 0) {
+            // 如果当前输入以^2结尾，则删除两个字符
+            if (currentInput.endsWith("^2")) {
+                currentInput = currentInput.substring(0, currentInput.length() - 2);
+            } else {
+                // 删除最后一个字符
+                currentInput = currentInput.substring(0, currentInput.length() - 1);
+            }
+        }
+        tv_input.setText(currentInput);
+    }
 
 
     /**
@@ -315,10 +334,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //每当输入运算符时，保存前后要加空格，方便后面取值
         if (numberOrOperator.equals("+") || numberOrOperator.equals("-") || numberOrOperator.equals("×") || numberOrOperator.equals("÷") || numberOrOperator.equals("^2")) {
             currentInput += " " + numberOrOperator + " ";
+//            currentInput += " " + numberOrOperator;
+
         } else {
             currentInput += numberOrOperator;
         }
-//        currentInput += numberOrOperator;
+//            currentInput += numberOrOperator + " ";
+
         tv_input.setText(currentInput);
     }
 
