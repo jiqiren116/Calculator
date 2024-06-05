@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tv_result = findViewById(R.id.tv_result);
         tv_input = findViewById(R.id.tv_input);
 
+        // 模拟数据
         calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
         calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
         calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
@@ -142,6 +143,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             tv_input.setText(currentInput);
         }
     }
+
+
 
     /**
      * 中缀表达式转后缀表达式
@@ -246,6 +249,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         String result = numberStack.pop();
+        // 如果result中包含 .0 则去掉
+        if (result.endsWith(".0")) {
+            result = result.substring(0, result.length() - 2);
+        }
         tv_result.setText(result);
     }
 
@@ -351,6 +358,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 创建PopupWindow
+     *
      * @return
      */
     private void createPopupWindow() {
