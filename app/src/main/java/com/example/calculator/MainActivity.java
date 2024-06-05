@@ -2,7 +2,6 @@ package com.example.calculator;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -70,8 +69,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         } else if (id == R.id.btn_equal) {
             //中缀表达式转后缀表达式
-            infixToPostfix();
+            String postfix = infixToPostfix();
             //后缀表达式求值
+            calculatePostfix(postfix);
         } else if (id == R.id.btn_delete) {
             if (currentInput.length() > 0) {
                 currentInput = currentInput.substring(0, currentInput.length() - 1);
@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 中缀表达式转后缀表达式
      */
-    private void infixToPostfix() {
+    private String infixToPostfix() {
         String[] tokens = currentInput.split(" ");
         //存放后缀表达式
         StringBuilder postfix = new StringBuilder();
@@ -122,10 +122,76 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         while (!operatorStack.isEmpty()) {
             postfix.append(operatorStack.pop()).append(" ");
         }
+
+        return postfix.toString();
+    }
+
+    /**
+     * 计算后缀表达式
+     *
+     * @param postfix
+     * @return
+     */
+    private void calculatePostfix(String postfix) {
+        // 定义栈存放操作数
+        Stack<String> numberStack = new Stack<>();
+        String[] tokens = postfix.split(" ");
+        for (String token : tokens) {
+            if (token.equals("+") || token.equals("-") || token.equals("×") || token.equals("÷") || token.equals("^2")) {
+                // 检查栈中是否有足够的操作数，不要出现1 + =这种情况，需要两个操作数但现在只有一个
+                if (numberStack.size() < 2 && !token.equals("^2")) {
+                    Toast.makeText(this, "操作数 数量不对！", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                // 遇到操作符，从栈中弹出两个操作数，进行计算，并将结果入栈
+                String num2 = null;
+                String num1 = null;
+                //如果操作符是^2，只弹出栈顶的一个操作数即可
+                if (token.equals("^2")) {
+                    num2 = numberStack.pop();
+
+                } else {
+                    //否则弹出两个操作数
+                    num2 = numberStack.pop();
+                    num1 = numberStack.pop();
+                }
+
+                String result = null;
+                switch (token) {
+                    case "+":
+                        result = String.valueOf(Double.parseDouble(num1) + Double.parseDouble(num2));
+                        break;
+                    case "-":
+                        result = String.valueOf(Double.parseDouble(num1) - Double.parseDouble(num2));
+                        break;
+                    case "×":
+                        result = String.valueOf(Double.parseDouble(num1) * Double.parseDouble(num2));
+                        break;
+                    case "÷":
+                        if (Double.parseDouble(num2) == 0) {
+                            Toast.makeText(this, "除数不能为0", Toast.LENGTH_SHORT).show();
+                        }
+                        result = String.valueOf(Double.parseDouble(num1) / Double.parseDouble(num2));
+                        break;
+                    case "^2":
+                        result = String.valueOf(Double.parseDouble(num2) * Double.parseDouble(num2));
+                        break;
+                    default:
+                        break;
+                }
+                numberStack.push(result);
+            } else {
+                numberStack.push(token);
+            }
+        }
+
+        String result = numberStack.pop();
+        tv_result.setText(result);
     }
 
     /**
      * 获取操作符的优先级
+     *
      * @param token
      * @return
      */
