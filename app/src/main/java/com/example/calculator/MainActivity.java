@@ -11,7 +11,10 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.Stack;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -20,6 +23,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView tv_input;//显示输入
     private String currentInput = "";//用于存储当前输入的字符串
 //    private Character currentOperator = '\0';//存储当前操作符
+
+    // 存储历史记录
+    private ArrayList<CalculationHistory> calculationHistoryList = new ArrayList<>();
+
+    // 适配器
+    HistoryAdapter historyAdapter;
+
+    // 存储历史记录的RecyclerView
+    RecyclerView recyclerView;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -49,6 +61,47 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tv_result = findViewById(R.id.tv_result);
         tv_input = findViewById(R.id.tv_input);
 
+        // 给RecyclerView添加适配器，并设置为隐藏
+        recyclerView = findViewById(R.id.recyclerView_history);
+        recyclerView.setVisibility(View.GONE);
+        // 设置布局管理器
+        recyclerView.setLayoutManager( new LinearLayoutManager(this));
+
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
+
+        historyAdapter = new HistoryAdapter(calculationHistoryList);
+
+        recyclerView.setAdapter(historyAdapter);
+
     }
 
     /**
@@ -72,6 +125,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             String postfix = infixToPostfix();
             //后缀表达式求值
             calculatePostfix(postfix);
+
+            //存储计算历史记录
+            calculationHistoryList.add(new CalculationHistory(currentInput));
+            historyAdapter.notifyDataSetChanged();
         } else if (id == R.id.btn_delete) {
             if (currentInput.length() > 0) {
                 currentInput = currentInput.substring(0, currentInput.length() - 1);
@@ -284,6 +341,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int itemId = item.getItemId();
         if (itemId == R.id.item_history) {
             Toast.makeText(this, "你点击了历史记录", Toast.LENGTH_SHORT).show();
+            // 显示 RecyclerView
+            if (recyclerView.getVisibility() == View.GONE) {
+                recyclerView.setVisibility(View.VISIBLE);
+            } else {
+                recyclerView.setVisibility(View.GONE);
+            }
         }
         return true;
     }

@@ -9,10 +9,15 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHolder> {
-    private List<CalculationHistory> historyList;
+    private ArrayList<CalculationHistory> historyList;
+
+    public HistoryAdapter(ArrayList<CalculationHistory> calculationHistoryList) {
+        this.historyList = calculationHistoryList;
+    }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView historyExpression;
