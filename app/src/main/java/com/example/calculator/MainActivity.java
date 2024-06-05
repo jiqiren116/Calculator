@@ -7,16 +7,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private TextView tv_result; //显示结果
@@ -24,6 +19,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private String currentInput = "";//用于存储当前输入的字符串
     private Character currentOperator = '\0';//存储当前操作符
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_equal).setOnClickListener(this);
         findViewById(R.id.btn_clear).setOnClickListener(this);
         findViewById(R.id.btn_delete).setOnClickListener(this);
-        findViewById(R.id.btn_point).setOnClickListener(this);
+        findViewById(R.id.btn_square).setOnClickListener(this);
 
         tv_result = findViewById(R.id.tv_result);
         tv_input = findViewById(R.id.tv_input);
@@ -62,17 +58,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         int id = v.getId();
         // 处理数字按钮点击事件
-        if (id == R.id.btn_0 || id == R.id.btn_1 || id == R.id.btn_2 || id == R.id.btn_3 || id == R.id.btn_4 || id == R.id.btn_5 || id == R.id.btn_6 || id == R.id.btn_7 || id == R.id.btn_8 || id == R.id.btn_9){
+        if (id == R.id.btn_0 || id == R.id.btn_1 || id == R.id.btn_2 || id == R.id.btn_3 || id == R.id.btn_4 || id == R.id.btn_5 || id == R.id.btn_6 || id == R.id.btn_7 || id == R.id.btn_8 || id == R.id.btn_9) {
             String number = ((Button) v).getText().toString();
             currentInput += number;
             tv_input.setText(currentInput);
-        } else if ( id == R.id.btn_add || id == R.id.btn_sub || id == R.id.btn_multiply || id == R.id.btn_div) {
-            Log.d("MainActivity", "onClick: ");
+        } else if (id == R.id.btn_add || id == R.id.btn_sub || id == R.id.btn_multiply || id == R.id.btn_div || id == R.id.btn_square) {
+            String operator = ((Button) v).getText().toString();
+            currentInput += operator;
+            tv_input.setText(currentInput);
+        } else if (id == R.id.btn_equal) {
+
+        } else if (id == R.id.btn_delete) {
+            if (currentInput.length() > 0) {
+                currentInput = currentInput.substring(0, currentInput.length() - 1);
+                tv_input.setText(currentInput);
+            }
+        } else if (id == R.id.btn_clear) {
+            currentInput = "";
+            tv_input.setText(currentInput);
         }
     }
-
-
-
 
 
     /**
