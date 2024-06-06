@@ -19,6 +19,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Stack;
 
@@ -114,8 +116,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         int id = v.getId();
         // 处理数字按钮点击事件
-        if (id == R.id.btn_0 || id == R.id.btn_1 || id == R.id.btn_2 || id == R.id.btn_3 || id == R.id.btn_4 || id == R.id.btn_5 || id == R.id.btn_6 || id == R.id.btn_7 || id == R.id.btn_8 || id == R.id.btn_9 || id == R.id.btn_point) {
+        if (id == R.id.btn_0 || id == R.id.btn_1 || id == R.id.btn_2 || id == R.id.btn_3 || id == R.id.btn_4 || id == R.id.btn_5 || id == R.id.btn_6 || id == R.id.btn_7 || id == R.id.btn_8 || id == R.id.btn_9) {
             inputOperation(v);
+        } else if (id == R.id.btn_point) {
+            // 判断小数点输入是否合法
+            boolean isLegal = pointIsLegal();
+            if (isLegal) {
+                inputOperation(v);
+            } else {
+                Toast.makeText(this, "小数点输入不合法", Toast.LENGTH_SHORT).show();
+            }
         } else if (id == R.id.btn_add || id == R.id.btn_sub
                 || id == R.id.btn_multiply || id == R.id.btn_div) {
             if (operarorIsLegal(v)) {
@@ -136,6 +146,42 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             currentInput = "";
             tv_input.setText(currentInput);
         }
+    }
+
+
+    /**
+     * 判断小数点输入是否合法
+     *
+     * @return
+     */
+    private boolean pointIsLegal() {
+        // 获取当前输入的表达式，去除末尾空格
+        String currentInputTemp = currentInput.trim();
+
+        // 检查当前输入是否为空
+        if (currentInputTemp.isEmpty()) {
+            return false;
+        }
+
+        // 分割currentInput以检查小数点位置
+        String[] parts = currentInputTemp.split(" ");
+
+        // 检查最后一个输入部分
+        String lastPart = parts[parts.length - 1];
+
+        // 判断条件：最后一个输入部分不以小数点结尾且不包含小数点，且不能以小数点开头
+        if (lastPart.endsWith(".") || lastPart.contains(".")) {
+            return false;
+        }
+
+        // 以下代码是判断小数点前一位是否有数字，一开始直接将小数点加进去
+        String temp = currentInput + ".";
+        //在temp字符串中查看最后的小数点位的前一位是否为空
+        if (temp.charAt(temp.length() - 2) == ' ') {
+            return false;
+        }
+
+        return true;
     }
 
     //执行点击删除按钮时的操作
@@ -166,7 +212,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         for (String token : tokens) {
             if (token.equals("+") || token.equals("-") || token.equals("×") || token.equals("÷")) {
-
                 // 遇到操作符，将操作符入栈
                 //若栈空直接入栈
                 if (operatorStack.isEmpty()) {
@@ -217,25 +262,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
 
                 // 遇到操作符，从栈中弹出两个操作数，进行计算，并将结果入栈
-                String num2 = numberStack.pop();;
-                String num1 = numberStack.pop();;
+                String num2 = numberStack.pop();
+                ;
+                String num1 = numberStack.pop();
+                ;
 
                 String result = null;
+                // 替换原来的switch-case中的运算部分
                 switch (token) {
                     case "+":
-                        result = String.valueOf(Double.parseDouble(num1) + Double.parseDouble(num2));
+                        result = String.valueOf(new BigDecimal(num1).add(new BigDecimal(num2)));
                         break;
                     case "-":
-                        result = String.valueOf(Double.parseDouble(num1) - Double.parseDouble(num2));
+                        result = String.valueOf(new BigDecimal(num1).subtract(new BigDecimal(num2)));
                         break;
                     case "×":
-                        result = String.valueOf(Double.parseDouble(num1) * Double.parseDouble(num2));
+                        result = String.valueOf(new BigDecimal(num1).multiply(new BigDecimal(num2)));
                         break;
                     case "÷":
                         if (Double.parseDouble(num2) == 0) {
                             Toast.makeText(this, "除数不能为0", Toast.LENGTH_SHORT).show();
+                            return;
+//                            continue; // 继续下一次循环
                         }
-                        result = String.valueOf(Double.parseDouble(num1) / Double.parseDouble(num2));
+                        result = String.valueOf(new BigDecimal(num1).divide(new BigDecimal(num2), 2, RoundingMode.HALF_UP)); // 保留两位小数
                         break;
                     default:
                         break;

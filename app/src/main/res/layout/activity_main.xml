@@ -335,13 +335,14 @@
         android:id="@+id/tv_input"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:text="input"
+        android:text="请输入"
         app:layout_constraintBottom_toTopOf="@+id/tv_result"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintVertical_bias="0.0"
+        android:textSize="30dp"/>
 
     <TextView
         android:id="@+id/tv_result"
@@ -350,6 +351,8 @@
         app:layout_constraintBottom_toTopOf="@+id/guideline"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        android:textSize="35dp"
+        android:text="运算结果显示"
         />
 
 
