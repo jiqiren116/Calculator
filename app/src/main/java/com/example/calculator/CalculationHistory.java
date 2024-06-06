@@ -8,6 +8,9 @@ public class CalculationHistory {
     private String expression; // 计算表达式
     private String timestamp;// 计算时间
 
+    public CalculationHistory() {
+    }
+
     public CalculationHistory(String expression) {
         this.expression = expression;
         this.timestamp = getCurrentTimestamp();

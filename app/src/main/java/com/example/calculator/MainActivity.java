@@ -1,10 +1,14 @@
 package com.example.calculator;
 
 import android.annotation.SuppressLint;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -30,19 +34,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView tv_input;//显示输入
     private String currentInput = "";//用于存储当前输入的字符串
 
-    // 存储历史记录
-    private ArrayList<CalculationHistory> calculationHistoryList = new ArrayList<>();
+    private ArrayList<CalculationHistory> calculationHistoryList = new ArrayList<>();// 存储历史记录
 
-    // 适配器
-    HistoryAdapter historyAdapter;
+    HistoryAdapter historyAdapter;// 适配器
 
+    private PopupWindow popupWindow;// 弹出窗口
 
-    // 弹出窗口
-    private PopupWindow popupWindow;
+    RecyclerView popupRecyclerView;//弹出窗口的recyclerView
 
-    //弹出窗口的recyclerView
-    RecyclerView popupRecyclerView;
-
+    private MyDatabaseHelper dbHelper;// 自己的数据库管理类
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -72,39 +72,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tv_result = findViewById(R.id.tv_result);
         tv_input = findViewById(R.id.tv_input);
 
-        // 模拟数据
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-        calculationHistoryList.add(new CalculationHistory("1 + 2 = "));
-
         historyAdapter = new HistoryAdapter(calculationHistoryList);
+
+        // 初始化数据库管理类
+        dbHelper = new MyDatabaseHelper(this, "HistoryStore.db", null, 1);
     }
 
     /**
@@ -137,9 +108,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             //后缀表达式求值
             calculatePostfix(postfix);
 
-            //存储计算历史记录
-            calculationHistoryList.add(new CalculationHistory(currentInput));
-            historyAdapter.notifyDataSetChanged();
+            // 保存计算历史记录到数据库
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            CalculationHistory historyTemp = new CalculationHistory(currentInput);
+            ContentValues values = new ContentValues();
+            values.put("expression", historyTemp.getExpression());
+            values.put("timestamp", historyTemp.getTimestamp());
+            db.insert("history", null, values);
+            values.clear();
+//            db.close();
         } else if (id == R.id.btn_delete) {
             deleteOperation();
         } else if (id == R.id.btn_clear) {
@@ -388,7 +365,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int itemId = item.getItemId();
         if (itemId == R.id.item_history) {
-            Toast.makeText(this, "你点击了历史记录", Toast.LENGTH_SHORT).show();
+            //每次点击历史记录，首先清空历史记录列表，再查询数据库
+            calculationHistoryList.clear();
+
+            // 准备查询数据
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            // 查询的结果按时间倒序排列
+            Cursor cursor = db.query("history", null, null, null, null, null, "timestamp DESC");
+            if (cursor.moveToFirst()) {
+                do {
+                    @SuppressLint("Range") String expression = cursor.getString(cursor.getColumnIndex("expression"));
+                    @SuppressLint("Range") String timestamp = cursor.getString(cursor.getColumnIndex("timestamp"));
+                    //将查询出的历史记录添加到List中，并刷新RecyclerView
+                    CalculationHistory history = new CalculationHistory();
+                    history.setExpression(expression);
+                    history.setTimestamp(timestamp);
+                    calculationHistoryList.add(history);
+                    historyAdapter.notifyDataSetChanged();
+
+                    //日志打印查询结果
+                    Log.d("MainActivity", "expression: " + expression + ", timestamp: " + timestamp);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+
             // 创建PopupWindow
             createPopupWindow();
             // 显示PopupWindow
