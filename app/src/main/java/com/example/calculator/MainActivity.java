@@ -23,6 +23,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -463,6 +464,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (!popupWindow.isShowing()) {
                 popupWindow.showAtLocation(findViewById(R.id.main), Gravity.NO_GRAVITY, 0, 0);
             }
+            return true;
+        } else if (itemId == R.id.item_clear_history) {
+            // 使用AlertDialog来显示确认框
+            new AlertDialog.Builder(this)
+                    .setTitle("清空历史记录") // 设置对话框标题
+                    .setMessage("确定要清空所有历史记录吗？") // 设置对话框消息
+                    .setPositiveButton("确定", (dialog, which) -> {
+                        // 用户点击“确定”按钮后执行的操作
+                        SQLiteDatabase db = dbHelper.getWritableDatabase();
+                        db.delete("history", null, null); // 清空历史记录
+                        db.close();
+                        calculationHistoryList.clear(); // 清空列表
+                        historyAdapter.notifyDataSetChanged(); // 刷新适配器
+                    })
+                    .setNegativeButton("取消", (dialog, which) -> {
+                        // 用户点击“取消”按钮后执行的操作，这里什么也不做
+                        dialog.dismiss();
+                    })
+                    .show(); // 显示对话框
+            return true;
+        } else if (itemId == R.id.item_about) {
+            // 创建AlertDialog
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("关于");
+            builder.setMessage("本软件由robot-x开发，用于学习安卓开发。\n 于2024年6月6日 11:11:11");
+            builder.setPositiveButton("确定", null);
+            builder.show();
             return true;
         }
         return true;
