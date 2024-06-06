@@ -1,6 +1,7 @@
 package com.example.calculator;
 
 import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
 import android.content.ContentValues;
 import android.content.IntentFilter;
 import android.database.Cursor;
@@ -8,6 +9,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -45,9 +48,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private MyDatabaseHelper dbHelper;// 自己的数据库管理类
 
+    private ProgressDialog progressDialog;// 添加一个ProgressDialog成员变量，用于在计算时显示进度,方便用户感知计算过程
+
+    //uiHandler在主线程中创建，所以自动绑定主线程
+    private Handler uiHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case 1:
+                    String result = (String) msg.obj;
+                    tv_result.setText(result);
+
+                    // 计算完成后，隐藏ProgressDialog
+                    if (progressDialog != null && progressDialog.isShowing()) {
+                        progressDialog.dismiss();
+                    }
+                    break;
+            }
+        }
+    };
+
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -77,12 +102,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // 初始化数据库管理类
         dbHelper = new MyDatabaseHelper(this, "HistoryStore.db", null, 1);
-
-//        //临时用来注册广播
-//        IntentFilter intentFilter = new IntentFilter();
-//        intentFilter.addAction("com.example.calculator.MY_BROADCAST");
-//        MyBroadcastReceiver myBroadcastReceiver = new MyBroadcastReceiver();
-//        registerReceiver(myBroadcastReceiver, intentFilter);
     }
 
     /**
@@ -110,10 +129,43 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 inputOperation(v);
             }
         } else if (id == R.id.btn_equal) {
-            //中缀表达式转后缀表达式
-            String postfix = infixToPostfix();
-            //后缀表达式求值
-            calculatePostfix(postfix);
+            showProgressDialog(); // 显示进度对话框
+
+            // 定义一个子线程函数，来进行耗时逻辑运算，然后利用Handler的sendMessage方法将结果发送给主线程，从而更新UI
+            new Thread(() -> {
+                //中缀表达式转后缀表达式
+                String postfix = infixToPostfix();
+                //后缀表达式求值
+                String result = calculatePostfix(postfix);
+
+                //如果返回值为error，说明计算过程中出现了错误，直接return
+                if (result.equals("error")) {
+                    return;
+                }
+
+                //此处让workerThread线程休眠5秒中，模拟计算的耗时过程
+                try {
+                    Thread.sleep(2500);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                //文件下载完成后更新UI
+                Message msg = new Message();
+                //what是我们自定义的一个Message的识别码，以便于在Handler的handleMessage方法中根据what识别
+                //出不同的Message，以便我们做出不同的处理操作
+                msg.what = 1;
+
+                //我们可以通过arg1和arg2给Message传入简单的数据
+                //我们也可以通过给obj赋值Object类型传递向Message传入任意数据
+                msg.obj = result;
+                //我们还可以通过setData方法和getData方法向Message中写入和读取Bundle类型的数据
+                //msg.setData(null);
+                //Bundle data = msg.getData();
+
+                //将该Message发送给对应的Handler
+                uiHandler.sendMessage(msg);
+            }).start();
 
             // 保存计算历史记录到数据库
             SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -123,13 +175,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             values.put("timestamp", historyTemp.getTimestamp());
             db.insert("history", null, values);
             values.clear();
-//            db.close();
+            db.close();
         } else if (id == R.id.btn_delete) {
             deleteOperation();
         } else if (id == R.id.btn_clear) {
             currentInput = "";
             tv_input.setText(currentInput);
         }
+    }
+
+    /**
+     * 显示ProgressDialog的方法
+     */
+    private void showProgressDialog() {
+        if (progressDialog == null) {
+            progressDialog = new ProgressDialog(this);
+            progressDialog.setMessage("正在运算中...");
+            progressDialog.setCanceledOnTouchOutside(false); // 用户点击屏幕外部时，ProgressDialog不会被取消
+        }
+        progressDialog.show();
     }
 
 
@@ -178,7 +242,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         // 删除最后一个非空格字符
         if (currentInput.length() > 0) {
-//             删除最后一个字符
+            //删除最后一个字符
             currentInput = currentInput.substring(0, currentInput.length() - 1);
         }
         tv_input.setText(currentInput);
@@ -234,7 +298,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * @param postfix
      * @return
      */
-    private void calculatePostfix(String postfix) {
+    private String calculatePostfix(String postfix) {
         // 定义栈存放操作数
         Stack<String> numberStack = new Stack<>();
         String[] tokens = postfix.split(" ");
@@ -244,14 +308,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // 检查栈中是否有足够的操作数，不要出现1 + =这种情况，需要两个操作数但现在只有一个
                 if (numberStack.size() < 2) {
                     Toast.makeText(this, "操作数 数量不对！", Toast.LENGTH_SHORT).show();
-                    return;
+                    return "error";
                 }
 
                 // 遇到操作符，从栈中弹出两个操作数，进行计算，并将结果入栈
                 String num2 = numberStack.pop();
-                ;
                 String num1 = numberStack.pop();
-                ;
 
                 String result = null;
                 // 替换原来的switch-case中的运算部分
@@ -268,8 +330,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     case "÷":
                         if (Double.parseDouble(num2) == 0) {
                             Toast.makeText(this, "除数不能为0", Toast.LENGTH_SHORT).show();
-                            return;
-//                            continue; // 继续下一次循环
+                            return "error";
                         }
                         result = String.valueOf(new BigDecimal(num1).divide(new BigDecimal(num2), 2, RoundingMode.HALF_UP)); // 保留两位小数
                         break;
@@ -287,7 +348,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (result.endsWith(".0")) {
             result = result.substring(0, result.length() - 2);
         }
-        tv_result.setText(result);
+        return result;
     }
 
     /**
@@ -391,12 +452,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     history.setTimestamp(timestamp);
                     calculationHistoryList.add(history);
                     historyAdapter.notifyDataSetChanged();
-
-                    //日志打印查询结果
-                    Log.d("MainActivity", "expression: " + expression + ", timestamp: " + timestamp);
                 } while (cursor.moveToNext());
             }
             cursor.close();
+            db.close();
 
             // 创建PopupWindow
             createPopupWindow();
