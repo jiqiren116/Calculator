@@ -1,5 +1,8 @@
 package com.example.calculator;
 
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +12,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -39,7 +43,16 @@ public class HistoryAdapter extends RecyclerView.Adapter<HistoryAdapter.ViewHold
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.history_item, parent, false);
         final ViewHolder holder = new ViewHolder(view);
         holder.itemView.setOnClickListener(v -> {
-            Log.d(TAG, "你点击了！！！");
+            Intent intent = new Intent("com.example.calculator.MY_BROADCAST");
+
+            // 指定广播接收器的组件名
+            intent.setComponent(new ComponentName("com.example.calculator",
+                    "com.example.calculator.MyBroadcastReceiver"));
+
+            //将表达式expression放到intent中
+            intent.putExtra("expression", holder.historyExpression.getText().toString());
+
+            v.getContext().sendBroadcast(intent);
 
         });
         return holder;

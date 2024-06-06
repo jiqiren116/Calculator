@@ -2,6 +2,7 @@ package com.example.calculator;
 
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
+import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -76,6 +77,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // 初始化数据库管理类
         dbHelper = new MyDatabaseHelper(this, "HistoryStore.db", null, 1);
+
+//        //临时用来注册广播
+//        IntentFilter intentFilter = new IntentFilter();
+//        intentFilter.addAction("com.example.calculator.MY_BROADCAST");
+//        MyBroadcastReceiver myBroadcastReceiver = new MyBroadcastReceiver();
+//        registerReceiver(myBroadcastReceiver, intentFilter);
     }
 
     /**
@@ -161,7 +168,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return true;
     }
 
-    //执行点击删除按钮时的操作
+    /**
+     * 执行点击删除按钮时的操作
+     */
     private void deleteOperation() {
         // 如果当前输入的最后一个字符是空格，继续删除前一个字符，直到找到非空格字符为止
         while (currentInput.length() > 0 && currentInput.charAt(currentInput.length() - 1) == ' ') {
