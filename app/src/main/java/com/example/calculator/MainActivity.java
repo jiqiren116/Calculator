@@ -53,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private ProgressDialog progressDialog;// 添加一个ProgressDialog成员变量，用于在计算时显示进度,方便用户感知计算过程
 
+    private int loadingTime = 1000; // 模拟计算过程的加载时间
+
     //uiHandler在主线程中创建，所以自动绑定主线程
     private Handler uiHandler = new Handler() {
         @Override
@@ -167,43 +169,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     beginMsg.what = 0;
                     uiHandler.sendMessage(beginMsg);
 
-                    //此处让workerThread线程休眠5秒中，模拟计算的耗时过程
+                    //此处让workerThread线程休眠，模拟计算的耗时过程
                     try {
-                        Thread.sleep(2000); //此休眠时间用于 实机演示时 使用
-
-//                    Thread.sleep(100); //此休眠时间用于 测试时 使用
-
+                        Thread.sleep(loadingTime); // 此休眠时间用于 模拟子线程进行耗时逻辑 使用
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
 
-                    //文件下载完成后更新UI
                     Message msg = new Message();
-                    //what是我们自定义的一个Message的识别码，以便于在Handler的handleMessage方法中根据what识别
-                    //出不同的Message，以便我们做出不同的处理操作
-                    msg.what = 1;
-
-                    //我们可以通过arg1和arg2给Message传入简单的数据
-                    //我们也可以通过给obj赋值Object类型传递向Message传入任意数据
-                    msg.obj = result;
-                    //我们还可以通过setData方法和getData方法向Message中写入和读取Bundle类型的数据
-                    //msg.setData(null);
-                    //Bundle data = msg.getData();
-
-                    //将该Message发送给对应的Handler
-                    uiHandler.sendMessage(msg);
+                    msg.what = 1;//what是我们自定义的一个Message的识别码，以便于在Handler的handleMessage方法中根据what识别出不同的Message，以便我们做出不同的处理操作
+                    msg.obj = result;//我们也可以通过给obj赋值Object类型传递向Message传入任意数据
+                    uiHandler.sendMessage(msg);//将该Message发送给对应的Handler
                 }
             }).start();
 
-            // 保存计算历史记录到数据库
-            SQLiteDatabase db = dbHelper.getWritableDatabase();
-            CalculationHistory historyTemp = new CalculationHistory(currentInput);
-            ContentValues values = new ContentValues();
-            values.put("expression", historyTemp.getExpression());
-            values.put("timestamp", historyTemp.getTimestamp());
-            db.insert("history", null, values);
-            values.clear();
-            db.close();
+            saveHistoryToDatabase(); //保存计算历史记录到数据库
         } else if (id == R.id.btn_delete) {
             deleteOperation();
         } else if (id == R.id.btn_clear) {
@@ -211,6 +191,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             tv_input.setText("请输入");
             tv_result.setText("运算结果显示");
         }
+    }
+
+    /**
+     * 保存计算历史记录到数据库
+     */
+    private void saveHistoryToDatabase() {
+        // 保存计算历史记录到数据库
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        CalculationHistory historyTemp = new CalculationHistory(currentInput);
+        ContentValues values = new ContentValues();
+        values.put("expression", historyTemp.getExpression());
+        values.put("timestamp", historyTemp.getTimestamp());
+        db.insert("history", null, values);
+        values.clear();
+        db.close();
     }
 
 
@@ -233,32 +228,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * @return
      */
     private boolean pointIsLegal() {
-        // 获取当前输入的表达式，去除末尾空格
-        String currentInputTemp = currentInput.trim();
-
-        // 检查当前输入是否为空
-        if (currentInputTemp.isEmpty()) {
+        String currentInputTemp = currentInput.trim();// 获取当前输入的表达式，去除末尾空格
+        if (currentInputTemp.isEmpty()) {// 检查当前输入是否为空
             return false;
         }
-
-        // 分割currentInput以检查小数点位置
-        String[] parts = currentInputTemp.split(" ");
-
-        // 检查最后一个输入部分
-        String lastPart = parts[parts.length - 1];
+        String[] parts = currentInputTemp.split(" ");// 分割currentInput以检查小数点位置
+        String lastPart = parts[parts.length - 1];// 检查最后一个输入部分
 
         // 判断条件：最后一个输入部分不以小数点结尾且不包含小数点，且不能以小数点开头
         if (lastPart.endsWith(".") || lastPart.contains(".")) {
             return false;
         }
-
-        // 以下代码是判断小数点前一位是否有数字，一开始直接将小数点加进去
-        String temp = currentInput + ".";
-        //在temp字符串中查看最后的小数点位的前一位是否为空
-        if (temp.charAt(temp.length() - 2) == ' ') {
+        String temp = currentInput + ".";// 以下代码是判断小数点前一位是否有数字，一开始直接将小数点加进去
+        if (temp.charAt(temp.length() - 2) == ' ') {//在temp字符串中查看最后的小数点位的前一位是否为空
             return false;
         }
-
         return true;
     }
 
@@ -270,17 +254,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         while (currentInput.length() > 0 && currentInput.charAt(currentInput.length() - 1) == ' ') {
             currentInput = currentInput.substring(0, currentInput.length() - 1);
         }
-        // 删除最后一个非空格字符
-        if (currentInput.length() > 0) {
-            //删除最后一个字符
-            currentInput = currentInput.substring(0, currentInput.length() - 1);
+
+        if (currentInput.length() > 0) {// 删除最后一个非空格字符
+
+            currentInput = currentInput.substring(0, currentInput.length() - 1);//删除最后一个字符
         }
+
         //如果被删除的字符前面也有空格，则删除该空格，一直到没有空格位置
         while (currentInput.length() > 0 && currentInput.charAt(currentInput.length() - 1) == ' ') {
             currentInput = currentInput.substring(0, currentInput.length() - 1);
         }
-        //如果前面是加减乘除运算符，则在后面加空格
-        char lastChar = currentInput.charAt(currentInput.length() - 1);
+
+        char lastChar = currentInput.charAt(currentInput.length() - 1);//如果前面是加减乘除运算符，则在后面加空格
         if (currentInput.length() > 0
                 && lastChar == '+'
                 || lastChar == '-'
@@ -288,7 +273,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 || lastChar == '÷') {
             currentInput += " ";
         }
-
         tv_input.setText(currentInput);
     }
 
@@ -298,11 +282,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private String infixToPostfix() {
         String[] tokens = currentInput.split(" ");
-        //存放后缀表达式
-        StringBuilder postfix = new StringBuilder();
-        //定义栈存放操作符
-        Stack<String> operatorStack = new Stack<>();
-
+        StringBuilder postfix = new StringBuilder();//存放后缀表达式
+        Stack<String> operatorStack = new Stack<>();//定义栈存放操作符
 
         for (String token : tokens) {
             if (token.equals("+") || token.equals("-") || token.equals("×") || token.equals("÷")) {
@@ -314,8 +295,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     //栈不为空，比较优先级
                     String topOperator = operatorStack.peek();
                     if (getPriority(token) > getPriority(topOperator)) {
-                        //当前操作符优先级大于栈顶操作符优先级，直接入栈
-                        operatorStack.push(token);
+                        operatorStack.push(token);//当前操作符优先级大于栈顶操作符优先级，直接入栈
                     } else {
                         //当前操作符优先级小于等于栈顶操作符优先级，将栈顶操作符弹出，输出到后缀表达式中，再将当前操作符入栈
                         while (!operatorStack.isEmpty() && getPriority(token) <= getPriority(operatorStack.peek())) {
@@ -325,14 +305,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 }
             } else {
-                // 遇到数字，将数字输出
-                postfix.append(token).append(" ");
+                postfix.append(token).append(" ");// 遇到数字，将数字输出
             }
         }
         while (!operatorStack.isEmpty()) {
             postfix.append(operatorStack.pop()).append(" ");
         }
-
         return postfix.toString();
     }
 
@@ -460,9 +438,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         //每当输入运算符时，保存前后要加空格，方便后面取值
         if (numberOrOperator.equals("+") || numberOrOperator.equals("-") || numberOrOperator.equals("×") || numberOrOperator.equals("÷")) {
-
             currentInput += " " + numberOrOperator + " ";
-
         } else {
             currentInput += numberOrOperator;
         }
