@@ -526,22 +526,4 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int animStyle = android.R.style.Animation_Dialog; // 系统提供的动画样式
         popupWindow.setAnimationStyle(animStyle);
     }
-
-    // 让菜单同时显示图标和文字
-    // 参考链接https://cloud.tencent.com/developer/article/1730522
-    @Override
-    public boolean onMenuOpened(int featureId, Menu menu) {
-        if (menu != null) {
-            if (menu.getClass().getSimpleName().equalsIgnoreCase("MenuBuilder")) {
-                try {
-                    Method method = menu.getClass().getDeclaredMethod("setOptionalIconsVisible", Boolean.TYPE);
-                    method.setAccessible(true);
-                    method.invoke(menu, true);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return super.onMenuOpened(featureId, menu);
-    }
 }
