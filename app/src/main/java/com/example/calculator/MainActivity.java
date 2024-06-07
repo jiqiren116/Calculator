@@ -147,7 +147,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 //此处让workerThread线程休眠5秒中，模拟计算的耗时过程
                 try {
-                    Thread.sleep(2500);
+//                    Thread.sleep(2500); //此休眠时间用于 实机演示时 使用
+
+                    Thread.sleep(100); //此休眠时间用于 测试时 使用
+
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -192,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void showProgressDialog() {
         if (progressDialog == null) {
             progressDialog = new ProgressDialog(this);
-            progressDialog.setMessage("正在运算中...");
+            progressDialog.setMessage("正在 子线程 运算中...");
             progressDialog.setCanceledOnTouchOutside(false); // 用户点击屏幕外部时，ProgressDialog不会被取消
         }
         progressDialog.show();
@@ -321,20 +324,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // 替换原来的switch-case中的运算部分
                 switch (token) {
                     case "+":
-                        result = String.valueOf(new BigDecimal(num1).add(new BigDecimal(num2)));
+                        BigDecimal add = new BigDecimal(num1).add(new BigDecimal(num2));
+
+                        //将BigDecimal转换为字符串之前，去除尾部的0
+                        result = add.stripTrailingZeros().toPlainString();
                         break;
                     case "-":
-                        result = String.valueOf(new BigDecimal(num1).subtract(new BigDecimal(num2)));
+                        BigDecimal subtract = new BigDecimal(num1).subtract(new BigDecimal(num2));
+
+                        //将BigDecimal转换为字符串之前，去除尾部的0
+                        result = subtract.stripTrailingZeros().toPlainString();
                         break;
                     case "×":
-                        result = String.valueOf(new BigDecimal(num1).multiply(new BigDecimal(num2)));
+                        BigDecimal multiply = new BigDecimal(num1).multiply(new BigDecimal(num2));
+
+                        //将BigDecimal转换为字符串之前，去除尾部的0
+                        result = multiply.stripTrailingZeros().toPlainString();
                         break;
                     case "÷":
                         if (Double.parseDouble(num2) == 0) {
                             Toast.makeText(this, "除数不能为0", Toast.LENGTH_SHORT).show();
                             return "error";
                         }
-                        result = String.valueOf(new BigDecimal(num1).divide(new BigDecimal(num2), 2, RoundingMode.HALF_UP)); // 保留两位小数
+                        BigDecimal divide = new BigDecimal(num1).divide(new BigDecimal(num2), 2, RoundingMode.HALF_UP);
+
+                        //将BigDecimal转换为字符串之前，去除尾部的0
+                        result = divide.stripTrailingZeros().toPlainString();
                         break;
                     default:
                         break;
@@ -346,10 +361,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         String result = numberStack.pop();
-        // 如果result中包含 .0 则去掉
-        if (result.endsWith(".0")) {
-            result = result.substring(0, result.length() - 2);
-        }
+
         return result;
     }
 
