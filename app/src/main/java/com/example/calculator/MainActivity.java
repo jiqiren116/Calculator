@@ -208,8 +208,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             deleteOperation();
         } else if (id == R.id.btn_clear) {
             currentInput = "";
-            tv_input.setText(currentInput);
-            tv_result.setText("");
+            tv_input.setText("请输入");
+            tv_result.setText("运算结果显示");
         }
     }
 
@@ -275,6 +275,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             //删除最后一个字符
             currentInput = currentInput.substring(0, currentInput.length() - 1);
         }
+        //如果被删除的字符前面也有空格，则删除该空格，一直到没有空格位置
+        while (currentInput.length() > 0 && currentInput.charAt(currentInput.length() - 1) == ' ') {
+            currentInput = currentInput.substring(0, currentInput.length() - 1);
+        }
+        //如果前面是加减乘除运算符，则在后面加空格
+        char lastChar = currentInput.charAt(currentInput.length() - 1);
+        if (currentInput.length() > 0
+                && lastChar == '+'
+                || lastChar == '-'
+                || lastChar == '×'
+                || lastChar == '÷') {
+            currentInput += " ";
+        }
+
         tv_input.setText(currentInput);
     }
 
