@@ -11,6 +11,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Vibrator;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -57,14 +58,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case 1:
+                case 0: // 显示计算过程中的进度
+                    showProgressDialog();
+                    break;
+                case 1: //显示正常运算的结果
                     String result = (String) msg.obj;
                     tv_result.setText(result);
-
                     // 计算完成后，隐藏ProgressDialog
                     if (progressDialog != null && progressDialog.isShowing()) {
                         progressDialog.dismiss();
                     }
+                    break;
+                case 2://显示缺少操作数的错误信息
+                    String error1 = (String) msg.obj;
+                    Toast.makeText(MainActivity.this, error1, Toast.LENGTH_SHORT).show();
+                    break;
+                case 3://显示除数为0的错误信息
+                    String error2 = (String) msg.obj;
+                    Toast.makeText(MainActivity.this, error2, Toast.LENGTH_SHORT).show();
+                    break;
+                default:
                     break;
             }
         }
@@ -131,8 +144,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 inputOperation(v);
             }
         } else if (id == R.id.btn_equal) {
-            showProgressDialog(); // 显示进度对话框
-
             // 定义一个子线程函数，来进行耗时逻辑运算，然后利用Handler的sendMessage方法将结果发送给主线程，从而更新UI
             new Thread(() -> {
                 //中缀表达式转后缀表达式
@@ -140,36 +151,48 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 //后缀表达式求值
                 String result = calculatePostfix(postfix);
 
-                //如果返回值为error，说明计算过程中出现了错误，直接return
-                if (result.equals("error")) {
-                    return;
+                //如果返回值为error，说明计算过程中出现了错误，直接发送错误信息给UI
+                if (result.equals("error1")) {
+                    Message msg = new Message();
+                    msg.what = 2;
+                    msg.obj = "缺少操作数！";
+                    uiHandler.sendMessage(msg);
+                } else if (result.equals("error2")) {
+                    Message msg = new Message();
+                    msg.what = 3;
+                    msg.obj = "除数不能为0";
+                    uiHandler.sendMessage(msg);
+                } else { // 如果计算结果正确，则发送计算结果给UI
+                    Message beginMsg = new Message();
+                    beginMsg.what = 0;
+                    uiHandler.sendMessage(beginMsg);
+
+                    //此处让workerThread线程休眠5秒中，模拟计算的耗时过程
+                    try {
+                        Thread.sleep(2000); //此休眠时间用于 实机演示时 使用
+
+//                    Thread.sleep(100); //此休眠时间用于 测试时 使用
+
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    //文件下载完成后更新UI
+                    Message msg = new Message();
+                    //what是我们自定义的一个Message的识别码，以便于在Handler的handleMessage方法中根据what识别
+                    //出不同的Message，以便我们做出不同的处理操作
+                    msg.what = 1;
+
+                    //我们可以通过arg1和arg2给Message传入简单的数据
+                    //我们也可以通过给obj赋值Object类型传递向Message传入任意数据
+                    msg.obj = result;
+                    //我们还可以通过setData方法和getData方法向Message中写入和读取Bundle类型的数据
+                    //msg.setData(null);
+                    //Bundle data = msg.getData();
+
+                    //将该Message发送给对应的Handler
+                    uiHandler.sendMessage(msg);
                 }
-
-                //此处让workerThread线程休眠5秒中，模拟计算的耗时过程
-                try {
-//                    Thread.sleep(2500); //此休眠时间用于 实机演示时 使用
-
-                    Thread.sleep(100); //此休眠时间用于 测试时 使用
-
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-
-                //文件下载完成后更新UI
-                Message msg = new Message();
-                //what是我们自定义的一个Message的识别码，以便于在Handler的handleMessage方法中根据what识别
-                //出不同的Message，以便我们做出不同的处理操作
-                msg.what = 1;
-
-                //我们可以通过arg1和arg2给Message传入简单的数据
-                //我们也可以通过给obj赋值Object类型传递向Message传入任意数据
-                msg.obj = result;
-                //我们还可以通过setData方法和getData方法向Message中写入和读取Bundle类型的数据
-                //msg.setData(null);
-                //Bundle data = msg.getData();
-
-                //将该Message发送给对应的Handler
-                uiHandler.sendMessage(msg);
             }).start();
 
             // 保存计算历史记录到数据库
@@ -186,8 +209,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else if (id == R.id.btn_clear) {
             currentInput = "";
             tv_input.setText(currentInput);
+            tv_result.setText("");
         }
     }
+
 
     /**
      * 显示ProgressDialog的方法
@@ -312,8 +337,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 // 检查栈中是否有足够的操作数，不要出现1 + =这种情况，需要两个操作数但现在只有一个
                 if (numberStack.size() < 2) {
-                    Toast.makeText(this, "操作数 数量不对！", Toast.LENGTH_SHORT).show();
-                    return "error";
+                    //调用机器马达震动提醒
+                    Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+                    vibrator.vibrate(500);
+                    return "error1"; //error1表示缺少操作数
                 }
 
                 // 遇到操作符，从栈中弹出两个操作数，进行计算，并将结果入栈
@@ -343,8 +370,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case "÷":
                         if (Double.parseDouble(num2) == 0) {
-                            Toast.makeText(this, "除数不能为0", Toast.LENGTH_SHORT).show();
-                            return "error";
+                            //调用机器马达震动提醒
+                            Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+                            vibrator.vibrate(500);
+                            return "error2";//error2表示除数不能为0
                         }
                         BigDecimal divide = new BigDecimal(num1).divide(new BigDecimal(num2), 2, RoundingMode.HALF_UP);
 
