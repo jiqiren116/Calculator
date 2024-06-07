@@ -11,15 +11,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
-import android.text.InputType;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,7 +27,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -54,9 +50,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private ProgressDialog progressDialog;// 添加一个ProgressDialog成员变量，用于在计算时显示进度,方便用户感知计算过程
 
-    private int loadingTime = 1500; // 模拟计算过程的加载时间
+    private final int loadingTime = 1500; // 模拟计算过程的加载时间
 
     //uiHandler在主线程中创建，所以自动绑定主线程
+    @SuppressLint("HandlerLeak")
     private Handler uiHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
@@ -73,14 +70,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                     break;
                 case 2://显示缺少操作数的错误信息
+                case 3://显示除数为0的错误信息
                     String error1 = (String) msg.obj;
                     useVibrator();//调用机器马达震动提醒
                     Toast.makeText(MainActivity.this, error1, Toast.LENGTH_SHORT).show();
-                    break;
-                case 3://显示除数为0的错误信息
-                    String error2 = (String) msg.obj;
-                    useVibrator();//调用机器马达震动提醒
-                    Toast.makeText(MainActivity.this, error2, Toast.LENGTH_SHORT).show();
                     break;
                 default:
                     break;
@@ -229,7 +222,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 判断小数点输入是否合法
      *
-     * @return
      */
     private boolean pointIsLegal() {
         String currentInputTemp = currentInput.trim();// 获取当前输入的表达式，去除末尾空格
@@ -255,22 +247,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      */
     private void deleteOperation() {
         // 如果当前输入的最后一个字符是空格，继续删除前一个字符，直到找到非空格字符为止
-        while (currentInput.length() > 0 && currentInput.charAt(currentInput.length() - 1) == ' ') {
+        while (!currentInput.isEmpty() && currentInput.charAt(currentInput.length() - 1) == ' ') {
             currentInput = currentInput.substring(0, currentInput.length() - 1);
         }
 
-        if (currentInput.length() > 0) {// 删除最后一个非空格字符
-
+        if (!currentInput.isEmpty()) {// 删除最后一个非空格字符
             currentInput = currentInput.substring(0, currentInput.length() - 1);//删除最后一个字符
         }
 
         //如果被删除的字符前面也有空格，则删除该空格，一直到没有空格位置
-        while (currentInput.length() > 0 && currentInput.charAt(currentInput.length() - 1) == ' ') {
+        while (!currentInput.isEmpty() && currentInput.charAt(currentInput.length() - 1) == ' ') {
             currentInput = currentInput.substring(0, currentInput.length() - 1);
         }
 
-        char lastChar = currentInput.charAt(currentInput.length() - 1);//如果前面是加减乘除运算符，则在后面加空格
-        if (currentInput.length() > 0
+        //如果前面是加减乘除运算符，则在后面加空格，保持运算符前后都有空格，方便运算时使用“ ”分割
+        char lastChar = currentInput.charAt(currentInput.length() - 1);
+        if (!currentInput.isEmpty()
                 && lastChar == '+'
                 || lastChar == '-'
                 || lastChar == '×'
@@ -321,8 +313,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 计算后缀表达式
      *
-     * @param postfix
-     * @return
      */
     private String calculatePostfix(String postfix) {
         // 定义栈存放操作数
@@ -379,9 +369,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
 
-        String result = numberStack.pop();
-
-        return result;
+        return numberStack.pop();
     }
 
     /**
@@ -396,8 +384,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 获取操作符的优先级
      *
-     * @param token
-     * @return
      */
     private int getPriority(String token) {
         switch (token) {
@@ -415,11 +401,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 判断当前输入的运算符是否合法
      *
-     * @param v
      */
     private boolean operarorIsLegal(View v) {
         // 如果当前输入的字符串为空，则不允许输入运算符
-        if (currentInput.length() == 0) {
+        if (currentInput.isEmpty()) {
             useVibrator();//调用机器马达震动提醒
             Toast.makeText(this, "计算内容为空！", Toast.LENGTH_SHORT).show();
             return false;
@@ -440,7 +425,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 执行数字和操作符的输入
      *
-     * @param view
      */
     private void inputOperation(View view) {
         String numberOrOperator = ((Button) view).getText().toString();
@@ -459,7 +443,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * 添加OptionMenu
      *
      * @param menu The options menu in which you place your items.
-     * @return
      */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -471,8 +454,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * 处理选项菜单Optionmenu点击事件
      *
      * @param item The menu item that was selected.
-     * @return
      */
+    @SuppressLint("NotifyDataSetChanged")
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int itemId = item.getItemId();
@@ -540,12 +523,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 创建PopupWindow
      *
-     * @return
      */
     private void createPopupWindow() {
         //弹出窗口初始化
         // 初始化PopupWindow
-        View popupView = getLayoutInflater().inflate(R.layout.popup_recycler_view, null);
+        @SuppressLint("InflateParams") View popupView = getLayoutInflater().inflate(R.layout.popup_recycler_view, null);
         // 例如，设置PopupWindow的宽度为屏幕宽度的80%，高度为屏幕高度的60%
         DisplayMetrics metrics = getResources().getDisplayMetrics();
         int width = (int) (metrics.widthPixels * 0.7); // 屏幕宽度的70%
@@ -558,7 +540,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         popupRecyclerView = popupView.findViewById(R.id.popupRecyclerView);
         popupRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         popupRecyclerView.setAdapter(historyAdapter);
-        //处理popupwindow消失
+        //处理popup-window消失
         popupWindow.setOutsideTouchable(true);
         popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
 
