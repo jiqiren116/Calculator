@@ -3,7 +3,6 @@ package com.example.calculator;
 import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.ContentValues;
-import android.content.IntentFilter;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -12,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Vibrator;
+import android.text.InputType;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -19,6 +19,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -53,7 +54,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private ProgressDialog progressDialog;// 添加一个ProgressDialog成员变量，用于在计算时显示进度,方便用户感知计算过程
 
-    private int loadingTime = 1000; // 模拟计算过程的加载时间
+    private int loadingTime = 1500; // 模拟计算过程的加载时间
 
     //uiHandler在主线程中创建，所以自动绑定主线程
     private Handler uiHandler = new Handler() {
@@ -73,10 +74,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     break;
                 case 2://显示缺少操作数的错误信息
                     String error1 = (String) msg.obj;
+                    useVibrator();//调用机器马达震动提醒
                     Toast.makeText(MainActivity.this, error1, Toast.LENGTH_SHORT).show();
                     break;
                 case 3://显示除数为0的错误信息
                     String error2 = (String) msg.obj;
+                    useVibrator();//调用机器马达震动提醒
                     Toast.makeText(MainActivity.this, error2, Toast.LENGTH_SHORT).show();
                     break;
                 default:
@@ -138,6 +141,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (isLegal) {
                 inputOperation(v);
             } else {
+                useVibrator();//调用机器马达震动提醒
                 Toast.makeText(this, "小数点输入不合法", Toast.LENGTH_SHORT).show();
             }
         } else if (id == R.id.btn_add || id == R.id.btn_sub
@@ -329,9 +333,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 // 检查栈中是否有足够的操作数，不要出现1 + =这种情况，需要两个操作数但现在只有一个
                 if (numberStack.size() < 2) {
-                    //调用机器马达震动提醒
-                    Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-                    vibrator.vibrate(500);
                     return "error1"; //error1表示缺少操作数
                 }
 
@@ -362,9 +363,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         break;
                     case "÷":
                         if (Double.parseDouble(num2) == 0) {
-                            //调用机器马达震动提醒
-                            Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-                            vibrator.vibrate(500);
                             return "error2";//error2表示除数不能为0
                         }
                         BigDecimal divide = new BigDecimal(num1).divide(new BigDecimal(num2), 2, RoundingMode.HALF_UP);
@@ -384,6 +382,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String result = numberStack.pop();
 
         return result;
+    }
+
+    /**
+     * 调用机器马达震动提醒
+     */
+    private void useVibrator() {
+        //调用机器马达震动提醒
+        Vibrator vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
+        vibrator.vibrate(500);
     }
 
     /**
@@ -413,6 +420,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private boolean operarorIsLegal(View v) {
         // 如果当前输入的字符串为空，则不允许输入运算符
         if (currentInput.length() == 0) {
+            useVibrator();//调用机器马达震动提醒
             Toast.makeText(this, "计算内容为空！", Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -421,6 +429,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (splitCurrentInput.length > 1) {
             String s1 = splitCurrentInput[splitCurrentInput.length - 1];
             if (s1.equals("+") || s1.equals("-") || s1.equals("×") || s1.equals("÷")) {
+                useVibrator();//调用机器马达震动提醒
                 Toast.makeText(this, "字符不合法！", Toast.LENGTH_SHORT).show();
                 return false;
             }
