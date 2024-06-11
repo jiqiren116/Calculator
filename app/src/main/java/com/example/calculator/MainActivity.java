@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     showProgressDialog();
                     break;
                 case 1: //显示正常运算的结果
+                    useVibrator();
                     String result = (String) msg.obj;
                     tv_result.setText(result);
                     // 计算完成后，隐藏ProgressDialog
@@ -251,28 +252,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
      * 执行点击删除按钮时的操作
      */
     private void deleteOperation() {
-        // 如果当前输入的最后一个字符是空格，继续删除前一个字符，直到找到非空格字符为止
-        while (!currentInput.isEmpty() && currentInput.charAt(currentInput.length() - 1) == ' ') {
-            currentInput = currentInput.substring(0, currentInput.length() - 1);
-        }
+        //首先检查字符串是否为空，避免空指针异常
+        if (!currentInput.isEmpty()) {
+            // 如果当前输入的最后一个字符是空格，继续删除前一个字符，直到找到非空格字符为止
+            while (!currentInput.isEmpty() && currentInput.charAt(currentInput.length() - 1) == ' ') {
+                currentInput = currentInput.substring(0, currentInput.length() - 1);
+            }
 
-        if (!currentInput.isEmpty()) {// 删除最后一个非空格字符
-            currentInput = currentInput.substring(0, currentInput.length() - 1);//删除最后一个字符
-        }
+            if (!currentInput.isEmpty()) {// 删除最后一个非空格字符
+                currentInput = currentInput.substring(0, currentInput.length() - 1);//删除最后一个字符
+            }
 
-        //如果被删除的字符前面也有空格，则删除该空格，一直到没有空格位置
-        while (!currentInput.isEmpty() && currentInput.charAt(currentInput.length() - 1) == ' ') {
-            currentInput = currentInput.substring(0, currentInput.length() - 1);
-        }
+            //如果被删除的字符前面也有空格，则删除该空格，一直到没有空格位置
+            while (!currentInput.isEmpty() && currentInput.charAt(currentInput.length() - 1) == ' ') {
+                currentInput = currentInput.substring(0, currentInput.length() - 1);
+            }
 
-        //如果前面是加减乘除运算符，则在后面加空格，保持运算符前后都有空格，方便运算时使用“ ”分割
-        char lastChar = currentInput.charAt(currentInput.length() - 1);
-        if (!currentInput.isEmpty()
-                && lastChar == '+'
-                || lastChar == '-'
-                || lastChar == '×'
-                || lastChar == '÷') {
-            currentInput += " ";
+            //首先判断当前输入是否为空
+            if (!currentInput.isEmpty()) {//如果前面是加减乘除运算符，则在后面加空格，保持运算符前后都有空格，方便运算时使用“ ”分割
+                char lastChar = currentInput.charAt(currentInput.length() - 1);
+                if (!currentInput.isEmpty()
+                        && lastChar == '+'
+                        || lastChar == '-'
+                        || lastChar == '×'
+                        || lastChar == '÷') {
+                    currentInput += " ";
+                }
+            }
         }
         tv_input.setText(currentInput);
     }
