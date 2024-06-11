@@ -71,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     break;
                 case 2://显示缺少操作数的错误信息
                 case 3://显示除数为0的错误信息
+                case 4://当计算时表达式为空的错误信息
                     String error1 = (String) msg.obj;
                     useVibrator();//调用机器马达震动提醒
                     Toast.makeText(MainActivity.this, error1, Toast.LENGTH_SHORT).show();
@@ -152,24 +153,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 //如果返回值为error，说明计算过程中出现了错误，直接发送错误信息给UI
                 if (result.equals("error1")) {
-                    Message msg = new Message();
-                    msg.what = 2;
-                    msg.obj = "缺少操作数！";
-                    uiHandler.sendMessage(msg);
+                    mySendMessage(2, "缺少操作数！");
                 } else if (result.equals("error2")) {
-                    Message msg = new Message();
-                    msg.what = 3;
-                    msg.obj = "除数不能为0";
-                    uiHandler.sendMessage(msg);
+                    mySendMessage(3, "除数不能为0");
                 } else if (result.equals("error3")) {
-                    Message msg = new Message();
-                    msg.what = 3;
-                    msg.obj = "表达式为空，无法计算";
-                    uiHandler.sendMessage(msg);
+                    mySendMessage(4, "表达式为空，无法计算");
                 } else { // 如果计算结果正确，则发送计算结果给UI
-                    Message beginMsg = new Message();
-                    beginMsg.what = 0;
-                    uiHandler.sendMessage(beginMsg);
+                    //这个message的作用是开始显示计算过程
+                    mySendMessage(0, null);
 
                     //此处让workerThread线程休眠，模拟计算的耗时过程
                     try {
@@ -178,10 +169,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         throw new RuntimeException(e);
                     }
 
-                    Message msg = new Message();
-                    msg.what = 1;//what是我们自定义的一个Message的识别码，以便于在Handler的handleMessage方法中根据what识别出不同的Message，以便我们做出不同的处理操作
-                    msg.obj = result;//我们也可以通过给obj赋值Object类型传递向Message传入任意数据
-                    uiHandler.sendMessage(msg);//将该Message发送给对应的Handler
+                    //此处是计算结果的Message，发送计算结果给UI，并关闭之前的计算过程
+                    mySendMessage(1, result);
 
                     saveHistoryToDatabase(); //保存计算历史记录到数据库
 
@@ -195,6 +184,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             tv_input.setText("请输入");
             tv_result.setText("运算结果显示");
         }
+    }
+
+    /**
+     * 封装的Handler的sendMessage的方法，为了减少代码量
+     */
+    private void mySendMessage(int what, Object obj) {
+        Message msg = new Message();
+        msg.what = what;
+        msg.obj = obj;
+        uiHandler.sendMessage(msg);
     }
 
     /**
@@ -228,7 +227,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 判断小数点输入是否合法
-     *
      */
     private boolean pointIsLegal() {
         String currentInputTemp = currentInput.trim();// 获取当前输入的表达式，去除末尾空格
@@ -319,7 +317,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 计算后缀表达式
-     *
      */
     private String calculatePostfix(String postfix) {
         // 定义栈存放操作数
@@ -396,7 +393,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 获取操作符的优先级
-     *
      */
     private int getPriority(String token) {
         switch (token) {
@@ -413,7 +409,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 判断当前输入的运算符是否合法
-     *
      */
     private boolean operarorIsLegal(View v) {
         // 如果当前输入的字符串为空，则不允许输入运算符
@@ -437,7 +432,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 执行数字和操作符的输入
-     *
      */
     private void inputOperation(View view) {
         String numberOrOperator = ((Button) view).getText().toString();
@@ -535,7 +529,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      * 创建PopupWindow
-     *
      */
     private void createPopupWindow() {
         //弹出窗口初始化
