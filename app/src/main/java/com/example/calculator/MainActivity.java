@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Stack;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    private static final String TAG = "MainActivity";
     private TextView tv_result; //显示结果
     private TextView tv_input;//显示输入
     private String currentInput = "";//用于存储当前输入的字符串
@@ -141,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         } else if (id == R.id.btn_add || id == R.id.btn_sub
                 || id == R.id.btn_multiply || id == R.id.btn_div) {
-            if (operarorIsLegal(v)) {
+            if (operarorIsLegal()) {
                 inputOperation(v);
             }
         } else if (id == R.id.btn_equal) {
@@ -271,16 +270,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             //首先判断当前输入是否为空
             if (!currentInput.isEmpty()) {//如果前面是加减乘除运算符，则在后面加空格，保持运算符前后都有空格，方便运算时使用“ ”分割
                 char lastChar = currentInput.charAt(currentInput.length() - 1);
-                if (!currentInput.isEmpty()
-                        && lastChar == '+'
-                        || lastChar == '-'
-                        || lastChar == '×'
-                        || lastChar == '÷') {
+                if (lastChar == '+' || lastChar == '-' || lastChar == '×' || lastChar == '÷') {
                     currentInput += " ";
                 }
             }
         }
-        tv_input.setText(currentInput);
+        if (currentInput.isEmpty()) {
+            tv_input.setText("请输入");
+        } else {
+            tv_input.setText(currentInput);
+        }
     }
 
 
@@ -416,7 +415,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /**
      * 判断当前输入的运算符是否合法
      */
-    private boolean operarorIsLegal(View v) {
+    private boolean operarorIsLegal() {
         // 如果当前输入的字符串为空，则不允许输入运算符
         if (currentInput.isEmpty()) {
             useVibrator();//调用机器马达震动提醒
@@ -464,7 +463,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     /**
-     * 处理选项菜单Optionmenu点击事件
+     * 处理选项菜单Option menu点击事件
      *
      * @param item The menu item that was selected.
      */
