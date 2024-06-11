@@ -161,6 +161,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     msg.what = 3;
                     msg.obj = "除数不能为0";
                     uiHandler.sendMessage(msg);
+                } else if (result.equals("error3")) {
+                    Message msg = new Message();
+                    msg.what = 3;
+                    msg.obj = "表达式为空，无法计算";
+                    uiHandler.sendMessage(msg);
                 } else { // 如果计算结果正确，则发送计算结果给UI
                     Message beginMsg = new Message();
                     beginMsg.what = 0;
@@ -177,10 +182,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     msg.what = 1;//what是我们自定义的一个Message的识别码，以便于在Handler的handleMessage方法中根据what识别出不同的Message，以便我们做出不同的处理操作
                     msg.obj = result;//我们也可以通过给obj赋值Object类型传递向Message传入任意数据
                     uiHandler.sendMessage(msg);//将该Message发送给对应的Handler
+
+                    saveHistoryToDatabase(); //保存计算历史记录到数据库
+
                 }
             }).start();
-
-            saveHistoryToDatabase(); //保存计算历史记录到数据库
+//            saveHistoryToDatabase(); //保存计算历史记录到数据库
         } else if (id == R.id.btn_delete) {
             deleteOperation();
         } else if (id == R.id.btn_clear) {
@@ -318,6 +325,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // 定义栈存放操作数
         Stack<String> numberStack = new Stack<>();
         String[] tokens = postfix.split(" ");
+
+        //判断tokens是否为空
+        if (tokens.length == 0) {// 检查后缀表达式是否为空
+            return "error3"; //error3表示表达式为空
+        }
+
         for (String token : tokens) {
             if (token.equals("+") || token.equals("-") || token.equals("×") || token.equals("÷")) {
 
